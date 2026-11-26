@@ -17,9 +17,9 @@ static bool IsFusionStringValid(const char* value, size_t prefixLength) {
 
 static void AddFusionString(tN2kMsg& msg, const char* value) {
     size_t length = strlen(value);
-    msg.Add1ByteUInt(static_cast<uint8_t>(length));
+    msg.AddByte(static_cast<uint8_t>(length));
     msg.AddBuf(value, length);
-    msg.Add1ByteUInt(0);
+    msg.AddByte(0);
 }
 
 static bool BeginFusionParse(const tN2kMsg& msg, tN2kFusionMessageId messageId,
@@ -86,15 +86,15 @@ static bool ParseFusionString(const tN2kMsg& msg, int index, char* value,
 void SetFusionMediaControl(tN2kMsg& msg, uint8_t sourceID,
                            tN2kFusionCommand command) {
     SetFusionCommand(msg, N2kFusionMessageIdMediaCommand);
-    msg.Add1ByteUInt(sourceID);
-    msg.Add1ByteUInt(static_cast<uint8_t>(command));
+    msg.AddByte(sourceID);
+    msg.AddByte(static_cast<uint8_t>(command));
 }
 
 void SetFusionSiriusControl(tN2kMsg& msg, uint8_t sourceID,
                             tN2kFusionSiriusCommand command, uint16_t data) {
     SetFusionCommand(msg, N2kFusionMessageIdSendSiriusCommand);
-    msg.Add1ByteUInt(sourceID);
-    msg.Add1ByteUInt(static_cast<uint8_t>(command));
+    msg.AddByte(sourceID);
+    msg.AddByte(static_cast<uint8_t>(command));
     msg.Add2ByteUInt(data);
 }
 
@@ -104,57 +104,57 @@ void SetFusionRequestStatus(tN2kMsg& msg) {
 
 void SetFusionSource(tN2kMsg& msg, uint8_t sourceID) {
     SetFusionCommand(msg, N2kFusionMessageIdSetSource);
-    msg.Add1ByteUInt(sourceID);
+    msg.AddByte(sourceID);
 }
 
 void SetFusionMute(tN2kMsg& msg, tN2kFusionMuteCommand command) {
     SetFusionCommand(msg, N2kFusionMessageIdSetMute);
-    msg.Add1ByteUInt(static_cast<uint8_t>(command));
+    msg.AddByte(static_cast<uint8_t>(command));
 }
 
 void SetFusionZoneVolume(tN2kMsg& msg, uint8_t zone, uint8_t volume) {
     SetFusionCommand(msg, N2kFusionMessageIdSetZoneVolume);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(volume);
+    msg.AddByte(zone);
+    msg.AddByte(volume);
 }
 
 void SetFusionAllVolumes(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
                          uint8_t zone3, uint8_t zone4) {
     SetFusionCommand(msg, N2kFusionMessageIdSetAllVolumes);
-    msg.Add1ByteUInt(zone1);
-    msg.Add1ByteUInt(zone2);
-    msg.Add1ByteUInt(zone3);
-    msg.Add1ByteUInt(zone4);
+    msg.AddByte(zone1);
+    msg.AddByte(zone2);
+    msg.AddByte(zone3);
+    msg.AddByte(zone4);
 }
 
 void SetFusionPower(tN2kMsg& msg, tN2kFusionPowerState power) {
     SetFusionCommand(msg, N2kFusionMessageIdPower);
-    msg.Add1ByteUInt(static_cast<uint8_t>(power));
+    msg.AddByte(static_cast<uint8_t>(power));
 }
 
 void SetFusionMenuAction(tN2kMsg& msg, uint8_t sourceID, uint32_t itemIndex,
                          tN2kFusionMenuAction action, uint8_t lockID) {
     SetFusionCommand(msg, N2kFusionMessageIdMenuAction);
-    msg.Add1ByteUInt(sourceID);
+    msg.AddByte(sourceID);
     msg.Add4ByteUInt(itemIndex);
-    msg.Add1ByteUInt(static_cast<uint8_t>(action));
-    msg.Add1ByteUInt(lockID);
+    msg.AddByte(static_cast<uint8_t>(action));
+    msg.AddByte(lockID);
 }
 
 void SetFusionRequestMenuCount(tN2kMsg& msg, uint8_t sourceID, uint8_t lockID) {
     SetFusionCommand(msg, N2kFusionMessageIdRequestMenuCount);
-    msg.Add1ByteUInt(sourceID);
-    msg.Add1ByteUInt(lockID);
+    msg.AddByte(sourceID);
+    msg.AddByte(lockID);
 }
 
 void SetFusionRequestMenuItems(tN2kMsg& msg, uint8_t sourceID,
                                uint32_t startIndex, uint32_t count,
                                uint8_t lockID) {
     SetFusionCommand(msg, N2kFusionMessageIdRequestMenuItem);
-    msg.Add1ByteUInt(sourceID);
+    msg.AddByte(sourceID);
     msg.Add4ByteUInt(startIndex);
     msg.Add4ByteUInt(count);
-    msg.Add1ByteUInt(lockID);
+    msg.AddByte(lockID);
 }
 
 void SetFusionRequestMenuLockID(tN2kMsg& msg, uint32_t requestToken) {
@@ -171,47 +171,47 @@ void SetFusionSetting(tN2kMsg& msg, tN2kFusionSetting id, uint32_t value) {
 void SetFusionTunerCommand(tN2kMsg& msg, tN2kFusionRadioSource source,
                            tN2kFusionTunerCommand command, uint32_t frequencyHz) {
     SetFusionCommand(msg, N2kFusionMessageIdTunerCommand);
-    msg.Add1ByteUInt(static_cast<uint8_t>(source));
-    msg.Add1ByteUInt(static_cast<uint8_t>(command));
+    msg.AddByte(static_cast<uint8_t>(source));
+    msg.AddByte(static_cast<uint8_t>(command));
     msg.Add4ByteUInt(frequencyHz);
 }
 
 void SetFusionAuxGain(tN2kMsg& msg, uint8_t sourceID, uint8_t gain) {
     SetFusionCommand(msg, N2kFusionMessageIdSetAuxGain);
-    msg.Add1ByteUInt(sourceID);
-    msg.Add1ByteUInt(gain);
+    msg.AddByte(sourceID);
+    msg.AddByte(gain);
 }
 
 void SetFusionBalance(tN2kMsg& msg, uint8_t zone, uint8_t value) {
     SetFusionCommand(msg, N2kFusionMessageIdSetBalance);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(value);
+    msg.AddByte(zone);
+    msg.AddByte(value);
 }
 
 void SetFusionLowPassFilter(tN2kMsg& msg, uint8_t zone,
                             tN2kFusionLowPassFilter filter) {
     SetFusionCommand(msg, N2kFusionMessageIdSetLowPassFilter);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(static_cast<uint8_t>(filter));
+    msg.AddByte(zone);
+    msg.AddByte(static_cast<uint8_t>(filter));
 }
 
 void SetFusionSublevel(tN2kMsg& msg, uint8_t zone, uint8_t level) {
     SetFusionCommand(msg, N2kFusionMessageIdSetSublevel);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(level);
+    msg.AddByte(zone);
+    msg.AddByte(level);
 }
 
 void SetFusionVolumeLimit(tN2kMsg& msg, uint8_t zone, uint8_t limit) {
     SetFusionCommand(msg, N2kFusionMessageIdSetVolumeLimit);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(limit);
+    msg.AddByte(zone);
+    msg.AddByte(limit);
 }
 
 bool SetFusionZoneName(tN2kMsg& msg, uint8_t zone, const char* name) {
     if (!IsFusionStringValid(name, 5)) return false;
 
     SetFusionCommand(msg, N2kFusionMessageIdSetZoneName);
-    msg.Add1ByteUInt(zone);
+    msg.AddByte(zone);
     AddFusionString(msg, name);
     return true;
 }
@@ -219,19 +219,19 @@ bool SetFusionZoneName(tN2kMsg& msg, uint8_t zone, const char* name) {
 void SetFusionEqualizer(tN2kMsg& msg, uint8_t zone, uint8_t bass,
                         uint8_t mid, uint8_t treble) {
     SetFusionCommand(msg, N2kFusionMessageIdSetEqualizer);
-    msg.Add1ByteUInt(zone);
-    msg.Add1ByteUInt(bass);
-    msg.Add1ByteUInt(mid);
-    msg.Add1ByteUInt(treble);
+    msg.AddByte(zone);
+    msg.AddByte(bass);
+    msg.AddByte(mid);
+    msg.AddByte(treble);
 }
 
 void SetFusionAllSublevels(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
                            uint8_t zone3, uint8_t zone4) {
     SetFusionCommand(msg, N2kFusionMessageIdSetAllSublevels);
-    msg.Add1ByteUInt(zone1);
-    msg.Add1ByteUInt(zone2);
-    msg.Add1ByteUInt(zone3);
-    msg.Add1ByteUInt(zone4);
+    msg.AddByte(zone1);
+    msg.AddByte(zone2);
+    msg.AddByte(zone3);
+    msg.AddByte(zone4);
 }
 
 bool SetFusionDeviceName(tN2kMsg& msg, const char* name) {
