@@ -9,6 +9,14 @@ static void SetFusionCommand(tN2kMsg& msg, tN2kFusionMessageId messageId) {
     msg.Add2ByteUInt(static_cast<uint16_t>(messageId));
 }
 
+static void SetFusionStatusMessage(tN2kMsg& msg,
+                                   tN2kFusionStatusMessageId messageId) {
+    msg.SetPGN(130820L);
+    msg.Priority = 7;
+    msg.Add2ByteUInt(0x81A3);
+    msg.Add2ByteUInt(static_cast<uint16_t>(messageId));
+}
+
 static bool IsFusionStringValid(const char* value, size_t prefixLength) {
     if (value == NULL) return false;
     size_t length = strlen(value);
@@ -519,6 +527,452 @@ bool ParseFusionDeviceName(const tN2kMsg& msg, char* name,
     if (!BeginFusionParse(msg, N2kFusionMessageIdSetDeviceName, -1, index)) return false;
 
     return ParseFusionString(msg, index, name, nameBufSize);
+}
+
+void SetFusionStatusVersions(tN2kMsg& msg, uint16_t hardwareMajor,
+                             uint16_t hardwareMinor, uint8_t softwareMajor,
+                             uint8_t softwareMinor, uint8_t buildNumber) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdAPIVersion);
+    msg.Add2ByteUInt(hardwareMajor);
+    msg.Add2ByteUInt(hardwareMinor);
+    msg.AddByte(softwareMajor);
+    msg.AddByte(softwareMinor);
+    msg.AddByte(buildNumber);
+    msg.AddByte(0);
+}
+
+bool SetFusionStatusSource(tN2kMsg& msg, uint8_t sourceID,
+                           uint8_t currentSourceID, uint8_t sourceType,
+                           uint8_t flags, const char* source) {
+    if (!IsFusionStringValid(source, 8)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSource);
+    msg.AddByte(sourceID);
+    msg.AddByte(currentSourceID);
+    msg.AddByte(sourceType);
+    msg.AddByte(flags);
+    AddFusionString(msg, source);
+    return true;
+}
+
+void SetFusionStatusSourceCount(tN2kMsg& msg, uint8_t sourceCount) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSourceCount);
+    msg.AddByte(sourceCount);
+}
+
+void SetFusionStatusMedia(tN2kMsg& msg, uint8_t sourceID, uint16_t flags,
+                          uint32_t trackNumber, uint32_t trackCount,
+                          uint32_t length, uint32_t position) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdTrackInfo);
+    msg.AddByte(sourceID);
+    msg.Add2ByteUInt(flags);
+    msg.Add4ByteUInt(trackNumber);
+    msg.Add4ByteUInt(trackCount);
+    msg.Add4ByteUInt(length);
+    msg.Add4ByteUInt(position);
+}
+
+static bool SetFusionStatusIndexedString(tN2kMsg& msg,
+                                         tN2kFusionStatusMessageId messageId,
+                                         uint8_t sourceID, uint32_t itemIndex,
+                                         const char* value) {
+    if (!IsFusionStringValid(value, 9)) return false;
+    SetFusionStatusMessage(msg, messageId);
+    msg.AddByte(sourceID);
+    msg.Add4ByteUInt(itemIndex);
+    AddFusionString(msg, value);
+    return true;
+}
+
+bool SetFusionStatusTrackName(tN2kMsg& msg, uint8_t sourceID,
+                              uint32_t itemIndex, const char* track) {
+    return SetFusionStatusIndexedString(msg, N2kFusionStatusMessageIdTrackTitle,
+                                        sourceID, itemIndex, track);
+}
+
+bool SetFusionStatusArtistName(tN2kMsg& msg, uint8_t sourceID,
+                               uint32_t itemIndex, const char* artist) {
+    return SetFusionStatusIndexedString(msg, N2kFusionStatusMessageIdTrackArtist,
+                                        sourceID, itemIndex, artist);
+}
+
+bool SetFusionStatusAlbumName(tN2kMsg& msg, uint8_t sourceID,
+                              uint32_t itemIndex, const char* album) {
+    return SetFusionStatusIndexedString(msg, N2kFusionStatusMessageIdTrackAlbum,
+                                        sourceID, itemIndex, album);
+}
+
+bool SetFusionStatusDeviceName(tN2kMsg& msg, const char* name) {
+    if (!IsFusionStringValid(name, 4)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdUnitName);
+    AddFusionString(msg, name);
+    return true;
+}
+
+bool SetFusionStatusZoneName(tN2kMsg& msg, uint8_t zone, const char* name) {
+    if (!IsFusionStringValid(name, 5)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdZoneName);
+    msg.AddByte(zone);
+    AddFusionString(msg, name);
+    return true;
+}
+
+void SetFusionStatusSpeedVolumeCurrentSpeed(tN2kMsg& msg, uint8_t sourceID,
+                                            uint16_t speed, uint8_t enabled) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSpeedVolumeCurrentSpeed);
+    msg.AddByte(sourceID);
+    msg.Add2ByteUInt(speed);
+    msg.AddByte(enabled);
+}
+
+void SetFusionStatusIgnitionSwitchState(tN2kMsg& msg, uint8_t state) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdIgnitionSwitchState);
+    msg.AddByte(state);
+}
+
+void SetFusionStatusMenuLockID(tN2kMsg& msg, uint32_t requestToken,
+                               uint8_t lockID) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMenuLockID);
+    msg.Add4ByteUInt(requestToken);
+    msg.AddByte(lockID);
+}
+
+bool SetFusionStatusRDSData(tN2kMsg& msg, uint8_t sourceID, uint8_t rdsType,
+                            uint8_t programmeType, const char* rds) {
+    if (!IsFusionStringValid(rds, 7) || strlen(rds) != 30) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdRDSData);
+    msg.AddByte(sourceID);
+    msg.AddByte(rdsType);
+    msg.AddByte(programmeType);
+    AddFusionString(msg, rds);
+    return true;
+}
+
+bool SetFusionStatusMultiroom(tN2kMsg& msg, uint8_t enabled,
+                              const uint8_t ipAddress[4]) {
+    if (ipAddress == NULL) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMultiroom);
+    msg.AddByte(enabled);
+    msg.AddBuf(ipAddress, 4);
+    return true;
+}
+
+void SetFusionStatusMultiroomStatus(tN2kMsg& msg, uint8_t available) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMultiroomStatus);
+    msg.AddByte(available);
+}
+
+void SetFusionStatusProcessingBypass(tN2kMsg& msg, uint8_t bypass) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdProcessingBypass);
+    msg.AddByte(bypass);
+}
+
+void SetFusionStatusMono(tN2kMsg& msg, uint8_t zone, uint8_t enabled) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMono);
+    msg.AddByte(zone);
+    msg.AddByte(enabled);
+}
+
+bool SetFusionStatusTrackPosition(tN2kMsg& msg, uint8_t sourceID,
+                                  uint32_t progress) {
+    if (progress > 0x00ffffffUL) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdTrackProgress);
+    msg.AddByte(sourceID);
+    msg.AddByte(static_cast<uint8_t>(progress));
+    msg.AddByte(static_cast<uint8_t>(progress >> 8));
+    msg.AddByte(static_cast<uint8_t>(progress >> 16));
+    msg.AddByte(0);
+    return true;
+}
+
+bool SetFusionStatusTuner(tN2kMsg& msg, uint8_t sourceID, uint8_t scanning,
+                          uint32_t frequency, uint8_t signalStrength,
+                          const char* track) {
+    if (!IsFusionStringValid(track, 11)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdTuner);
+    msg.AddByte(sourceID);
+    msg.AddByte(scanning);
+    msg.Add4ByteUInt(frequency);
+    msg.AddByte(signalStrength);
+    AddFusionString(msg, track);
+    return true;
+}
+
+bool SetFusionStatusMarineTuner(tN2kMsg& msg, uint8_t sourceID,
+                                uint8_t channel, uint8_t signalStrength,
+                                const char* name) {
+    if (!IsFusionStringValid(name, 7)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMarineTuner);
+    msg.AddByte(sourceID);
+    msg.AddByte(channel);
+    msg.AddByte(signalStrength);
+    AddFusionString(msg, name);
+    return true;
+}
+
+void SetFusionStatusMarineSquelch(tN2kMsg& msg, uint8_t sourceID,
+                                  uint8_t squelch) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMarineSquelch);
+    msg.AddByte(sourceID);
+    msg.AddByte(squelch);
+}
+
+void SetFusionStatusMarineScanMode(tN2kMsg& msg, uint8_t sourceID,
+                                   uint8_t scanMode) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMarineScanMode);
+    msg.AddByte(sourceID);
+    msg.AddByte(scanMode);
+}
+
+bool SetFusionStatusMenuItem(tN2kMsg& msg, uint8_t sourceID,
+                             uint32_t itemIndex, uint8_t flags,
+                             uint8_t lockID, const char* text) {
+    if (!IsFusionStringValid(text, 11)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMenuItem);
+    msg.AddByte(sourceID);
+    msg.Add4ByteUInt(itemIndex);
+    msg.AddByte(flags);
+    msg.AddByte(lockID);
+    AddFusionString(msg, text);
+    return true;
+}
+
+void SetFusionStatusAuxGain(tN2kMsg& msg, uint8_t sourceID, uint8_t gain) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdAuxGain);
+    msg.AddByte(sourceID);
+    msg.AddByte(gain);
+}
+
+void SetFusionStatusUSBRepeatStatus(tN2kMsg& msg, uint32_t status) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSetting);
+    msg.Add4ByteUInt(N2kFusionSettingUSBRepeat);
+    msg.Add4ByteUInt(status);
+}
+
+void SetFusionStatusSetting(tN2kMsg& msg, uint32_t id, uint32_t value) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSetting);
+    msg.Add4ByteUInt(id);
+    msg.Add4ByteUInt(value);
+}
+
+bool SetFusionStatusSettings(tN2kMsg& msg,
+                             const tN2kFusionSettingEntry* entries,
+                             uint32_t count) {
+    if (count > static_cast<uint32_t>((tN2kMsg::MaxDataLen - 8) / 8) ||
+        (count > 0 && entries == NULL)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSettings);
+    msg.Add4ByteUInt(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        msg.Add4ByteUInt(entries[i].id);
+        msg.Add4ByteUInt(entries[i].value);
+    }
+    return true;
+}
+
+void SetFusionStatusMute(tN2kMsg& msg, uint8_t mute) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMute);
+    msg.AddByte(mute);
+}
+
+void SetFusionStatusBalance(tN2kMsg& msg, uint8_t zone, uint8_t value) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdBalance);
+    msg.AddByte(zone);
+    msg.AddByte(value);
+}
+
+void SetFusionStatusLowPassFilter(tN2kMsg& msg, uint8_t zone, uint8_t filter) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdLowPassFilter);
+    msg.AddByte(zone);
+    msg.AddByte(filter);
+}
+
+void SetFusionStatusSublevels(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                              uint8_t zone3, uint8_t zone4) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSublevels);
+    msg.AddByte(zone1);
+    msg.AddByte(zone2);
+    msg.AddByte(zone3);
+    msg.AddByte(zone4);
+}
+
+void SetFusionStatusEQ(tN2kMsg& msg, uint8_t zone, uint8_t bass,
+                       uint8_t mid, uint8_t treble) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdTone);
+    msg.AddByte(zone);
+    msg.AddByte(bass);
+    msg.AddByte(mid);
+    msg.AddByte(treble);
+}
+
+void SetFusionStatusVolumeLimits(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                                 uint8_t zone3, uint8_t zone4) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdVolumeLimits);
+    msg.AddByte(zone1);
+    msg.AddByte(zone2);
+    msg.AddByte(zone3);
+    msg.AddByte(zone4);
+}
+
+void SetFusionStatusVolumes(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                            uint8_t zone3, uint8_t zone4) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdVolume);
+    msg.AddByte(zone1);
+    msg.AddByte(zone2);
+    msg.AddByte(zone3);
+    msg.AddByte(zone4);
+}
+
+void SetFusionStatusCapabilities(tN2kMsg& msg,
+                                 const tN2kFusionCapabilities& capabilities) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdCapabilities);
+    msg.Add2ByteUInt(capabilities.zone1);
+    msg.Add2ByteUInt(capabilities.zone2);
+    msg.Add2ByteUInt(capabilities.zone3);
+    msg.Add2ByteUInt(capabilities.zone4);
+    msg.Add2ByteUInt(capabilities.global);
+}
+
+void SetFusionStatusLineLevelControl(tN2kMsg& msg, uint8_t zone,
+                                     uint8_t control) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdLineLevelControl);
+    msg.AddByte(zone);
+    msg.AddByte(control);
+}
+
+void SetFusionStatusPowerState(tN2kMsg& msg, uint8_t state) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdPower);
+    msg.AddByte(state);
+}
+
+void SetFusionStatusSiriusXM(tN2kMsg& msg, uint8_t sourceID, uint8_t comState,
+                             uint8_t alert, uint16_t advisoryChannel,
+                             uint8_t tuningMode) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSirius);
+    msg.AddByte(sourceID);
+    msg.AddByte(comState);
+    msg.AddByte(alert);
+    msg.Add2ByteUInt(advisoryChannel);
+    msg.AddByte(tuningMode);
+}
+
+static bool SetFusionStatusSiriusXMString(tN2kMsg& msg,
+                                         tN2kFusionStatusMessageId messageId,
+                                         uint8_t sourceID,
+                                         uint16_t channelNumber,
+                                         const char* value) {
+    if (!IsFusionStringValid(value, 7)) return false;
+    SetFusionStatusMessage(msg, messageId);
+    msg.AddByte(sourceID);
+    msg.Add2ByteUInt(channelNumber);
+    AddFusionString(msg, value);
+    return true;
+}
+
+bool SetFusionStatusSiriusXMChannel(tN2kMsg& msg, uint8_t sourceID,
+                                    uint16_t channelNumber,
+                                    const char* channel) {
+    return SetFusionStatusSiriusXMString(msg,
+        N2kFusionStatusMessageIdSiriusXMChannel, sourceID, channelNumber, channel);
+}
+
+bool SetFusionStatusSiriusXMTitle(tN2kMsg& msg, uint8_t sourceID,
+                                  uint16_t channelNumber, const char* title) {
+    return SetFusionStatusSiriusXMString(msg,
+        N2kFusionStatusMessageIdSiriusXMTitle, sourceID, channelNumber, title);
+}
+
+bool SetFusionStatusSiriusXMArtist(tN2kMsg& msg, uint8_t sourceID,
+                                   uint16_t channelNumber, const char* artist) {
+    return SetFusionStatusSiriusXMString(msg,
+        N2kFusionStatusMessageIdSiriusXMArtist, sourceID, channelNumber, artist);
+}
+
+bool SetFusionStatusSiriusXMContentInfo(tN2kMsg& msg, uint8_t sourceID,
+                                        uint16_t channelNumber,
+                                        const char* genre) {
+    return SetFusionStatusSiriusXMString(msg,
+        N2kFusionStatusMessageIdSiriusXMGenre, sourceID, channelNumber, genre);
+}
+
+bool SetFusionStatusSiriusXMCategory(tN2kMsg& msg, uint8_t sourceID,
+                                     uint16_t channelNumber, const char* name) {
+    return SetFusionStatusSiriusXMString(msg,
+        N2kFusionStatusMessageIdSiriusXMCategory, sourceID, channelNumber, name);
+}
+
+void SetFusionStatusSiriusXMSignal(tN2kMsg& msg, uint8_t sourceID,
+                                   uint8_t signal) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSiriusXMSignal);
+    msg.AddByte(sourceID);
+    msg.AddByte(signal);
+}
+
+bool SetFusionStatusSiriusXMPresets(tN2kMsg& msg, uint8_t sourceID,
+                                    uint8_t count, const uint8_t* values,
+                                    size_t valuesLength) {
+    if (valuesLength > static_cast<size_t>(tN2kMsg::MaxDataLen - 6) ||
+        (valuesLength > 0 && values == NULL)) return false;
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSiriusXMPresets);
+    msg.AddByte(sourceID);
+    msg.AddByte(count);
+    if (valuesLength > 0) msg.AddBuf(values, valuesLength);
+    return true;
+}
+
+void SetFusionStatusMenuActionStatus(tN2kMsg& msg, uint8_t sourceID,
+                                     uint32_t itemIndex, uint8_t action,
+                                     uint8_t lockID) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMenuAction);
+    msg.AddByte(sourceID);
+    msg.Add4ByteUInt(itemIndex);
+    msg.AddByte(action);
+    msg.AddByte(lockID);
+}
+
+void SetFusionStatusMenuCount(tN2kMsg& msg, uint8_t sourceID,
+                              uint32_t count, uint8_t lockID) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdMenuCount);
+    msg.AddByte(sourceID);
+    msg.Add4ByteUInt(count);
+    msg.AddByte(lockID);
+}
+
+void SetFusionStatusLoudness(tN2kMsg& msg, uint8_t zone, uint8_t enabled) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdLoudness);
+    msg.AddByte(zone);
+    msg.AddByte(enabled);
+}
+
+void SetFusionStatusZoneCapabilitiesExtended(
+    tN2kMsg& msg, const tN2kFusionExtendedCapabilities& capabilities) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdZoneCapabilitiesExtended);
+    const tN2kFusionCapabilityBlock* blocks[5] = {
+        &capabilities.zone1, &capabilities.zone2, &capabilities.zone3,
+        &capabilities.zone4, &capabilities.global
+    };
+    for (size_t block = 0; block < 5; ++block) {
+        msg.Add2ByteUInt(blocks[block]->capabilities);
+        msg.AddBuf(blocks[block]->extra, sizeof(blocks[block]->extra));
+    }
+}
+
+void SetFusionStatusExternalAmpGain(tN2kMsg& msg, uint8_t zone,
+                                    uint8_t gain) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdExternalAmpGain);
+    msg.AddByte(zone);
+    msg.AddByte(gain);
+}
+
+void SetFusionStatusInternalAmpGain(tN2kMsg& msg, uint8_t zone,
+                                    uint8_t gain) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdInternalAmpGain);
+    msg.AddByte(zone);
+    msg.AddByte(gain);
+}
+
+void SetFusionStatusSystemCapabilities(tN2kMsg& msg, uint64_t capabilities) {
+    SetFusionStatusMessage(msg, N2kFusionStatusMessageIdSystemCapabilities);
+    msg.Add4ByteUInt(static_cast<uint32_t>(capabilities));
+    msg.Add4ByteUInt(static_cast<uint32_t>(capabilities >> 32));
 }
 
 bool ParseFusionStatusVersions(const tN2kMsg& msg, uint16_t& hardwareMajor,

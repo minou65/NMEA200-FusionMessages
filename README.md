@@ -5,7 +5,7 @@ C++ helpers for building and parsing Fusion-specific messages for NMEA 2000. Fie
 ## Features
 
 - Setters and matching parsers for Fusion commands on PGN **126720**.
-- Parsers for the **52 documented Fusion status variants** on PGN **130820**.
+- Setters and matching parsers for the supported Fusion status variants on PGN **130820**.
 - Fusion enums and bitfields in `src/N2KFusionTypes.h`.
 - Enum-to-string conversion in `src/N2kFusionMessagesEnumToStr.h`.
 
@@ -50,7 +50,14 @@ Each available setter has a matching parser. See `src/N2kFusionMessages.h` for p
 
 ## Status messages: PGN 130820
 
-The status parsers are declared as `ParseFusionStatus...` functions in `src/N2kFusionMessages.h`. They decode, among other things, version information, sources, media and track information, tuner and menu status, settings, zone values, SiriusXM data, and device capabilities.
+Status setters and parsers are declared as `SetFusionStatus...` and `ParseFusionStatus...` functions in `src/N2kFusionMessages.h`. They build and decode version information, sources, media and track information, tuner and menu status, settings, zone values, SiriusXM data, and device capabilities.
+
+Example building a status message:
+
+```cpp
+tN2kMsg statusMessage;
+SetFusionStatusVolumes(statusMessage, 20, 22, 24, 26);
+```
 
 Example parsing a string status:
 
@@ -71,7 +78,7 @@ if (ParseFusionStatusSettings(receivedMessage, count, entries, 8)) {
 }
 ```
 
-The capacity passed to `ParseFusionStatusSettings` is measured in entries. The parser fails if the provided capacity is too small for the message. String parsers require an output buffer with space for the terminating null character. SiriusXM preset data is returned as raw bytes because Canboat describes the field as binary data.
+The capacity passed to `ParseFusionStatusSettings` is measured in entries. The parser fails if the provided capacity is too small for the message. String parsers require an output buffer with space for the terminating null character; string setters return `false` for null or oversized input. `SetFusionStatusRDSData` also requires exactly 30 characters to match the fixed-size field parsed by `ParseFusionStatusRDSData`. `SetFusionStatusSettings` and `SetFusionStatusSiriusXMPresets` return `false` for invalid pointers or payloads that exceed the NMEA 2000 message capacity. SiriusXM preset data is returned/set as raw bytes because Canboat describes the field as binary data.
 
 The parsers return `false` if the PGN, manufacturer/industry field, message ID, fixed payload length, or output buffer is invalid. Enum-like status values are returned as raw values so that unknown future values are preserved.
 

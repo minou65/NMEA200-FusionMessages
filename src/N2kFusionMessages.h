@@ -1,6 +1,6 @@
 /**
  * @file N2kFusionMessages.h
- * @brief Builders and parsers for Fusion Electronics commands and requests on PGN 126720.
+ * @brief Builders and parsers for Fusion commands (PGN 126720) and status messages (PGN 130820).
  *
  * Field layouts follow the Fusion-specific PGN descriptions in the
  * Canboat documentation. Parsers reject messages with an unexpected PGN,
@@ -447,17 +447,94 @@ struct tN2kFusionExtendedCapabilities {
 };
 
 /**
- * @defgroup N2kFusionStatusParsers PGN 130820 status parsers
- * @brief Parsers for the Fusion status messages carried by PGN 130820.
+ * @defgroup N2kFusionStatusMessages PGN 130820 status messages
+ * @brief Builders and parsers for Fusion status messages carried by PGN 130820.
  *
- * Each parser validates the status message ID and fixed payload size where
- * applicable. String outputs use Fusion STRING_LZ encoding and require a
- * caller-provided null-terminated output buffer. Enum-like values are returned
- * as their raw integer representation to preserve unknown future values.
- * The Settings parser expects capacity in entries. The SiriusXM Presets parser
- * expects capacity in bytes and reports the number of binary bytes returned.
+ * Builders and parsers cover the status variants for which a parser is
+ * provided. Strings use Fusion STRING_LZ encoding. Enum-like values are passed
+ * as raw integers to preserve unknown future values.
  * @{
  */
+void SetFusionStatusVersions(tN2kMsg& msg, uint16_t hardwareMajor, uint16_t hardwareMinor,
+                             uint8_t softwareMajor, uint8_t softwareMinor, uint8_t buildNumber);
+bool SetFusionStatusSource(tN2kMsg& msg, uint8_t sourceID, uint8_t currentSourceID,
+                           uint8_t sourceType, uint8_t flags, const char* source);
+void SetFusionStatusSourceCount(tN2kMsg& msg, uint8_t sourceCount);
+void SetFusionStatusMedia(tN2kMsg& msg, uint8_t sourceID, uint16_t flags,
+                          uint32_t trackNumber, uint32_t trackCount,
+                          uint32_t length, uint32_t position);
+bool SetFusionStatusTrackName(tN2kMsg& msg, uint8_t sourceID, uint32_t itemIndex,
+                              const char* track);
+bool SetFusionStatusArtistName(tN2kMsg& msg, uint8_t sourceID, uint32_t itemIndex,
+                               const char* artist);
+bool SetFusionStatusAlbumName(tN2kMsg& msg, uint8_t sourceID, uint32_t itemIndex,
+                              const char* album);
+bool SetFusionStatusDeviceName(tN2kMsg& msg, const char* name);
+bool SetFusionStatusZoneName(tN2kMsg& msg, uint8_t zone, const char* name);
+void SetFusionStatusSpeedVolumeCurrentSpeed(tN2kMsg& msg, uint8_t sourceID,
+                                            uint16_t speed, uint8_t enabled);
+void SetFusionStatusIgnitionSwitchState(tN2kMsg& msg, uint8_t state);
+void SetFusionStatusMenuLockID(tN2kMsg& msg, uint32_t requestToken, uint8_t lockID);
+bool SetFusionStatusRDSData(tN2kMsg& msg, uint8_t sourceID, uint8_t rdsType,
+                            uint8_t programmeType, const char* rds);
+bool SetFusionStatusMultiroom(tN2kMsg& msg, uint8_t enabled, const uint8_t ipAddress[4]);
+void SetFusionStatusMultiroomStatus(tN2kMsg& msg, uint8_t available);
+void SetFusionStatusProcessingBypass(tN2kMsg& msg, uint8_t bypass);
+void SetFusionStatusMono(tN2kMsg& msg, uint8_t zone, uint8_t enabled);
+bool SetFusionStatusTrackPosition(tN2kMsg& msg, uint8_t sourceID, uint32_t progress);
+bool SetFusionStatusTuner(tN2kMsg& msg, uint8_t sourceID, uint8_t scanning,
+                          uint32_t frequency, uint8_t signalStrength, const char* track);
+bool SetFusionStatusMarineTuner(tN2kMsg& msg, uint8_t sourceID, uint8_t channel,
+                                uint8_t signalStrength, const char* name);
+void SetFusionStatusMarineSquelch(tN2kMsg& msg, uint8_t sourceID, uint8_t squelch);
+void SetFusionStatusMarineScanMode(tN2kMsg& msg, uint8_t sourceID, uint8_t scanMode);
+bool SetFusionStatusMenuItem(tN2kMsg& msg, uint8_t sourceID, uint32_t itemIndex,
+                             uint8_t flags, uint8_t lockID, const char* text);
+void SetFusionStatusAuxGain(tN2kMsg& msg, uint8_t sourceID, uint8_t gain);
+void SetFusionStatusUSBRepeatStatus(tN2kMsg& msg, uint32_t status);
+void SetFusionStatusSetting(tN2kMsg& msg, uint32_t id, uint32_t value);
+bool SetFusionStatusSettings(tN2kMsg& msg, const tN2kFusionSettingEntry* entries,
+                             uint32_t count);
+void SetFusionStatusMute(tN2kMsg& msg, uint8_t mute);
+void SetFusionStatusBalance(tN2kMsg& msg, uint8_t zone, uint8_t value);
+void SetFusionStatusLowPassFilter(tN2kMsg& msg, uint8_t zone, uint8_t filter);
+void SetFusionStatusSublevels(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                              uint8_t zone3, uint8_t zone4);
+void SetFusionStatusEQ(tN2kMsg& msg, uint8_t zone, uint8_t bass,
+                       uint8_t mid, uint8_t treble);
+void SetFusionStatusVolumeLimits(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                                 uint8_t zone3, uint8_t zone4);
+void SetFusionStatusVolumes(tN2kMsg& msg, uint8_t zone1, uint8_t zone2,
+                            uint8_t zone3, uint8_t zone4);
+void SetFusionStatusCapabilities(tN2kMsg& msg, const tN2kFusionCapabilities& capabilities);
+void SetFusionStatusLineLevelControl(tN2kMsg& msg, uint8_t zone, uint8_t control);
+void SetFusionStatusPowerState(tN2kMsg& msg, uint8_t state);
+void SetFusionStatusSiriusXM(tN2kMsg& msg, uint8_t sourceID, uint8_t comState,
+                             uint8_t alert, uint16_t advisoryChannel, uint8_t tuningMode);
+bool SetFusionStatusSiriusXMChannel(tN2kMsg& msg, uint8_t sourceID,
+                                    uint16_t channelNumber, const char* channel);
+bool SetFusionStatusSiriusXMTitle(tN2kMsg& msg, uint8_t sourceID,
+                                  uint16_t channelNumber, const char* title);
+bool SetFusionStatusSiriusXMArtist(tN2kMsg& msg, uint8_t sourceID,
+                                   uint16_t channelNumber, const char* artist);
+bool SetFusionStatusSiriusXMContentInfo(tN2kMsg& msg, uint8_t sourceID,
+                                        uint16_t channelNumber, const char* genre);
+bool SetFusionStatusSiriusXMCategory(tN2kMsg& msg, uint8_t sourceID,
+                                     uint16_t channelNumber, const char* name);
+void SetFusionStatusSiriusXMSignal(tN2kMsg& msg, uint8_t sourceID, uint8_t signal);
+bool SetFusionStatusSiriusXMPresets(tN2kMsg& msg, uint8_t sourceID, uint8_t count,
+                                    const uint8_t* values, size_t valuesLength);
+void SetFusionStatusMenuActionStatus(tN2kMsg& msg, uint8_t sourceID,
+                                     uint32_t itemIndex, uint8_t action, uint8_t lockID);
+void SetFusionStatusMenuCount(tN2kMsg& msg, uint8_t sourceID,
+                              uint32_t count, uint8_t lockID);
+void SetFusionStatusLoudness(tN2kMsg& msg, uint8_t zone, uint8_t enabled);
+void SetFusionStatusZoneCapabilitiesExtended(tN2kMsg& msg,
+                                              const tN2kFusionExtendedCapabilities& capabilities);
+void SetFusionStatusExternalAmpGain(tN2kMsg& msg, uint8_t zone, uint8_t gain);
+void SetFusionStatusInternalAmpGain(tN2kMsg& msg, uint8_t zone, uint8_t gain);
+void SetFusionStatusSystemCapabilities(tN2kMsg& msg, uint64_t capabilities);
+
 bool ParseFusionStatusVersions(const tN2kMsg& msg, uint16_t& hardwareMajor, uint16_t& hardwareMinor,
                                uint8_t& softwareMajor, uint8_t& softwareMinor, uint8_t& buildNumber);
 bool ParseFusionStatusSource(const tN2kMsg& msg, uint8_t& sourceID, uint8_t& currentSourceID,
